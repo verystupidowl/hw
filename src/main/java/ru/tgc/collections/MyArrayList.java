@@ -1,0 +1,273 @@
+package ru.tgc.collections;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.*;
+
+public class MyArrayList<E> implements List<E> {
+
+    private static final int INITIAL_CAPACITY = 10;
+    private int size;
+
+    private final Object[] EMPTY_ARRAY = new Object[INITIAL_CAPACITY];
+
+    private Object[] array;
+
+    public MyArrayList() {
+        this(INITIAL_CAPACITY);
+    }
+
+    public MyArrayList(int capacity) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException("Capacity should not be negative!");
+        }
+
+        array = EMPTY_ARRAY;
+    }
+
+    @Override
+    public int size() {
+        return size;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    @Override
+    public boolean contains(Object o) {
+        return indexOf(o) != -1;
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+        return new MyItr();
+    }
+
+    private class MyItr implements Iterator<E> {
+        private int cursor;
+
+        MyItr() {
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor != size;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public E next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("There is no more elements");
+            }
+            E item = (E) array[cursor];
+            cursor++;
+            return item;
+        }
+
+        @Override
+        public void remove() {
+            MyArrayList.this.remove(cursor);
+            cursor--;
+        }
+    }
+
+    @Override
+    public Object[] toArray() {
+        return array.clone();
+    }
+
+    @Override
+    public <T> T[] toArray(T[] a) {
+        return null;
+    }
+
+    @Override
+    public boolean add(E e) {
+        add(size, e);
+        return true;
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        return false;
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
+        return false;
+    }
+
+    @Override
+    public boolean addAll(int index, Collection<? extends E> c) {
+        return false;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public void clear() {
+        array = EMPTY_ARRAY;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public E get(int index) {
+        if (index > size || index < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        return (E) array[index];
+    }
+
+    @Override
+    public E set(int index, E element) {
+        return null;
+    }
+
+    @Override
+    public void add(int index, E element) {
+        if (index > size || index < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (element == null) {
+            throw new IllegalArgumentException();
+        }
+        if (size == array.length) {
+            growArray();
+        }
+
+        System.arraycopy(array, index, array, index + 1, size - index);
+        array[index] = element;
+        size++;
+    }
+
+    @Override
+    public E remove(int index) {
+        return null;
+    }
+
+    @Override
+    public int indexOf(Object o) {
+        for (int i = 0; i < size; i++) {
+            if (array[i].equals(o)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public int lastIndexOf(Object o) {
+        for (int i = size - 1; i > 0; i--) {
+            if (array[i].equals(o)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public ListIterator<E> listIterator() {
+        return null;
+    }
+
+    @Override
+    public ListIterator<E> listIterator(int index) {
+        return null;
+    }
+
+    @Override
+    public List<E> subList(int fromIndex, int toIndex) {
+        return null;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void sort(Comparator<? super E> comparator) {
+        this.trimSize();
+        if (array.length < 2) return;
+        quicksort((E[]) array, 0, array.length - 1, comparator);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void sort() {
+        this.trimSize();
+        if (array.length < 2) return;
+        if (!isComparable()) throw new IllegalArgumentException();
+        quicksort(
+                (E[]) array, 0, array.length - 1, (Comparator<E>) Comparator.naturalOrder()
+        );
+    }
+
+    private void trimSize() {
+        if (size < array.length) {
+            array = Arrays.copyOf(array, size);
+        }
+    }
+
+    private void quicksort(E[] arr, int low, int high, Comparator<? super E> comparator) {
+        if (low < high) {
+            int pivot = partition(arr, low, high, comparator);
+
+            quicksort(arr, low, pivot - 1, comparator);
+            quicksort(arr, pivot + 1, high, comparator);
+        }
+    }
+
+    private int partition(E[] arr, int low, int high, Comparator<? super E> comparator) {
+        E pivot = arr[high];
+        int i = (low - 1);
+        for (int j = low; j < high; j++) {
+            if (comparator.compare(arr[j], pivot) < 0) {
+                i++;
+
+                E temp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = temp;
+            }
+        }
+
+        E temp = arr[i + 1];
+        arr[i + 1] = arr[high];
+        arr[high] = temp;
+
+
+        return i + 1;
+    }
+
+    private void growArray() {
+        array = Arrays.copyOf(array, array.length * 2 + 1);
+    }
+
+
+    private boolean isComparable() {
+        return array[0] instanceof Comparable<?>;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i< size; i++) {
+            sb.append(array[i].toString());
+            sb.append(", ");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+}
