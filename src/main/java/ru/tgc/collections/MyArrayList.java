@@ -1,7 +1,5 @@
 package ru.tgc.collections;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.*;
 
 public class MyArrayList<E> implements List<E> {
@@ -9,9 +7,10 @@ public class MyArrayList<E> implements List<E> {
     private static final int INITIAL_CAPACITY = 10;
     private int size;
 
-    private final Object[] EMPTY_ARRAY = new Object[INITIAL_CAPACITY];
+    @SuppressWarnings("unchecked")
+    private final E[] EMPTY_ARRAY = (E[]) new Object[INITIAL_CAPACITY];
 
-    private Object[] array;
+    private E[] array;
 
     public MyArrayList() {
         this(INITIAL_CAPACITY);
@@ -57,12 +56,11 @@ public class MyArrayList<E> implements List<E> {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public E next() {
             if (!hasNext()) {
                 throw new NoSuchElementException("There is no more elements");
             }
-            E item = (E) array[cursor];
+            E item = array[cursor];
             cursor++;
             return item;
         }
@@ -92,6 +90,12 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public boolean remove(Object o) {
+        for (int i = 0; i < size; i++) {
+            if (o.equals(array[i])) {
+                remove(i);
+                return true;
+            }
+        }
         return false;
     }
 
@@ -126,12 +130,9 @@ public class MyArrayList<E> implements List<E> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public E get(int index) {
-        if (index > size || index < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        return (E) array[index];
+        checkIndex(index);
+        return array[index];
     }
 
     @Override
@@ -141,9 +142,7 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public void add(int index, E element) {
-        if (index > size || index < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        checkIndex(index);
         if (element == null) {
             throw new IllegalArgumentException();
         }
@@ -158,7 +157,11 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public E remove(int index) {
-        return null;
+        E element = array[index];
+        System.arraycopy(array, index++, array, index, size - index);
+        array[size] = null;
+        size--;
+        return element;
     }
 
     @Override
@@ -197,20 +200,18 @@ public class MyArrayList<E> implements List<E> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void sort(Comparator<? super E> comparator) {
         this.trimSize();
         if (array.length < 2) return;
-        quicksort((E[]) array, 0, array.length - 1, comparator);
+        quicksort(array, 0, array.length - 1, comparator);
     }
 
-    @SuppressWarnings("unchecked")
     public void sort() {
         this.trimSize();
         if (array.length < 2) return;
         if (!isComparable()) throw new IllegalArgumentException();
         quicksort(
-                (E[]) array, 0, array.length - 1, (Comparator<E>) Comparator.naturalOrder()
+                array, 0, array.length - 1, (Comparator<E>) Comparator.naturalOrder()
         );
     }
 
@@ -246,7 +247,6 @@ public class MyArrayList<E> implements List<E> {
         arr[i + 1] = arr[high];
         arr[high] = temp;
 
-
         return i + 1;
     }
 
@@ -259,11 +259,17 @@ public class MyArrayList<E> implements List<E> {
         return array[0] instanceof Comparable<?>;
     }
 
+    private void checkIndex(int index) {
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
-        for (int i = 0; i< size; i++) {
+        for (int i = 0; i < size; i++) {
             sb.append(array[i].toString());
             sb.append(", ");
         }
