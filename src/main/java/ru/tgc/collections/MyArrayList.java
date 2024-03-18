@@ -77,9 +77,10 @@ public class MyArrayList<E> implements List<E> {
         return array.clone();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T[] toArray(T[] a) {
-        return null;
+        return (T[]) new Object[size];
     }
 
     @Override
@@ -91,6 +92,10 @@ public class MyArrayList<E> implements List<E> {
     @Override
     public boolean remove(Object o) {
         for (int i = 0; i < size; i++) {
+            if (o == null && (array[i] == null)) {
+                    remove(i);
+                    return true;
+            }
             if (o.equals(array[i])) {
                 remove(i);
                 return true;
@@ -106,12 +111,21 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        return false;
+        addAll(size, c);
+        return true;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean addAll(int index, Collection<? extends E> c) {
-        return false;
+        checkIndex(index);
+        E[] newArray = (E[]) c.toArray();
+        while (array.length < size + newArray.length) {
+            growArray();
+        }
+        System.arraycopy(newArray, 0, array, index, newArray.length);
+        size += newArray.length;
+        return true;
     }
 
     @Override
@@ -127,6 +141,7 @@ public class MyArrayList<E> implements List<E> {
     @Override
     public void clear() {
         array = EMPTY_ARRAY;
+        size = 0;
     }
 
     @Override
@@ -137,15 +152,14 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public E set(int index, E element) {
-        return null;
+        checkIndex(index);
+        array[index] = element;
+        return element;
     }
 
     @Override
     public void add(int index, E element) {
         checkIndex(index);
-        if (element == null) {
-            throw new IllegalArgumentException();
-        }
         if (size == array.length) {
             growArray();
         }
@@ -196,7 +210,7 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
@@ -206,6 +220,7 @@ public class MyArrayList<E> implements List<E> {
         quicksort(array, 0, array.length - 1, comparator);
     }
 
+    @SuppressWarnings("unchecked")
     public void sort() {
         this.trimSize();
         if (array.length < 2) return;
@@ -270,8 +285,12 @@ public class MyArrayList<E> implements List<E> {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (int i = 0; i < size; i++) {
-            sb.append(array[i].toString());
-            sb.append(", ");
+            if (array[i] == null) {
+                sb.append("null, ");
+            } else {
+                sb.append(array[i].toString());
+                sb.append(", ");
+            }
         }
         sb.append("]");
         return sb.toString();
