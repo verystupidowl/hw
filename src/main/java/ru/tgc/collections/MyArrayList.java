@@ -74,7 +74,8 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public Object[] toArray() {
-        return array.clone();
+        trimSize();
+        return Arrays.copyOf(array, size);
     }
 
     @SuppressWarnings("unchecked")
@@ -92,11 +93,7 @@ public class MyArrayList<E> implements List<E> {
     @Override
     public boolean remove(Object o) {
         for (int i = 0; i < size; i++) {
-            if (o == null && (array[i] == null)) {
-                    remove(i);
-                    return true;
-            }
-            if (o.equals(array[i])) {
+            if (Objects.equals(o, array[i])) {
                 remove(i);
                 return true;
             }
@@ -116,16 +113,24 @@ public class MyArrayList<E> implements List<E> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean addAll(int index, Collection<? extends E> c) {
-        checkIndex(index);
-        E[] newArray = (E[]) c.toArray();
-        while (array.length < size + newArray.length) {
-            growArray();
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
         }
-        System.arraycopy(newArray, 0, array, index, newArray.length);
-        size += newArray.length;
-        return true;
+        int numNew = c.size();
+        ensureCapacity(size + numNew);
+
+        int numMoved = size - index;
+        if (numMoved > 0) {
+            System.arraycopy(array, index, array, index + numNew, numMoved);
+        }
+
+        int i = index;
+        for (E e : c) {
+            array[i++] = e;
+        }
+        size += numNew;
+        return numNew != 0;
     }
 
     @Override
@@ -160,10 +165,7 @@ public class MyArrayList<E> implements List<E> {
     @Override
     public void add(int index, E element) {
         checkIndex(index);
-        if (size == array.length) {
-            growArray();
-        }
-
+        ensureCapacity(size + 1);
         System.arraycopy(array, index, array, index + 1, size - index);
         array[index] = element;
         size++;
@@ -171,17 +173,22 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public E remove(int index) {
-        E element = array[index];
-        System.arraycopy(array, index++, array, index, size - index);
-        array[size] = null;
-        size--;
-        return element;
+        checkIndex(index);
+        E oldValue = array[index];
+
+        int numMoved = size - index - 1;
+        if (numMoved > 0) {
+            System.arraycopy(array, index + 1, array, index, numMoved);
+        }
+        array[--size] = null;
+
+        return oldValue;
     }
 
     @Override
     public int indexOf(Object o) {
         for (int i = 0; i < size; i++) {
-            if (array[i].equals(o)) {
+            if (Objects.equals(array[i], o)) {
                 return i;
             }
         }
@@ -191,7 +198,7 @@ public class MyArrayList<E> implements List<E> {
     @Override
     public int lastIndexOf(Object o) {
         for (int i = size - 1; i > 0; i--) {
-            if (array[i].equals(o)) {
+            if (Objects.equals(array[i], o)) {
                 return i;
             }
         }
@@ -216,15 +223,21 @@ public class MyArrayList<E> implements List<E> {
     @Override
     public void sort(Comparator<? super E> comparator) {
         this.trimSize();
-        if (array.length < 2) return;
+        if (array.length < 2) {
+            return;
+        }
         quicksort(array, 0, array.length - 1, comparator);
     }
 
     @SuppressWarnings("unchecked")
     public void sort() {
         this.trimSize();
-        if (array.length < 2) return;
-        if (!isComparable()) throw new IllegalArgumentException();
+        if (array.length < 2) {
+            return;
+        }
+        if (!isComparable()) {
+            throw new IllegalArgumentException();
+        }
         quicksort(
                 array, 0, array.length - 1, (Comparator<E>) Comparator.naturalOrder()
         );
@@ -265,8 +278,25 @@ public class MyArrayList<E> implements List<E> {
         return i + 1;
     }
 
-    private void growArray() {
-        array = Arrays.copyOf(array, array.length * 2 + 1);
+    private void ensureCapacity(int minCapacity) {
+        if (minCapacity - array.length > 0) {
+            growArray(minCapacity);
+        }
+    }
+
+    private void growArray(int minCapacity) {
+        int oldCapacity = array.length;
+        int newCapacity = oldCapacity + (oldCapacity >> 1);
+        if (newCapacity - minCapacity < 0) {
+            newCapacity = minCapacity;
+        }
+        if (newCapacity - Integer.MAX_VALUE > 0) {
+            if (minCapacity < 0) {
+                throw new OutOfMemoryError();
+            }
+            newCapacity = Integer.MAX_VALUE;
+        }
+        array = Arrays.copyOf(array, newCapacity);
     }
 
 
