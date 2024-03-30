@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Date;
+
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -13,7 +16,7 @@ public class Song {
 
     private long id;
     private String name;
-    private long price;
-    private String describe;
+    private String albumName;
+    private Date date;
     private Artist owner;
 }
